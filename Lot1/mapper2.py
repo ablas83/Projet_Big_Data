@@ -15,5 +15,5 @@ for line in sys.stdin:
         city = fields[5].replace('"', '')
         department = int(fields[4][:3].replace('"', '')) if fields[4][:3].replace('"', '').isdecimal() else 0
         if year >= 2008 and nbcolis != 0:
-            print('%s, %s, %s, %s' % (name, city, department, nbcolis))
+            print('%s\t%s\t%s\t%s' % (name, city, department, nbcolis))
     i += 1 # nous voulons sauter la première ligne car il s'agit du nom des colonnes.
