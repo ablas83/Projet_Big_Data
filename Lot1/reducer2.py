@@ -1,11 +1,14 @@
 import heapq
 import sys
+import math
 
 current_name = None
 current_city = None
 current_department = None
 current_nbcolis = 0
-list = []
+colis_per_client = {}  # Dictionnaire pour stocker les colis par client
+city_per_client = {}   # Dictionnaire pour stocker les villes par client
+department_per_client = {}  # Dictionnaire pour stocker les départements par client
 
 for line in sys.stdin:
     line = line.strip()
@@ -20,24 +23,28 @@ for line in sys.stdin:
         current_city = city
         current_department = department
         current_nbcolis = nbcolis
-
-    if current_name == name:
+    elif current_name == name:
         current_nbcolis += nbcolis
-
     else:
-        if current_name:
-            list.append((current_name, current_city, current_department, current_nbcolis))
-
+        colis_per_client[current_name] = colis_per_client.get(current_name, []) + [current_nbcolis]
+        city_per_client[current_name] = current_city
+        department_per_client[current_name] = current_department
         current_name = name
         current_city = city
         current_department = department
         current_nbcolis = nbcolis
 
 if current_name:
-    list.append((current_name, current_city, current_department, current_nbcolis))
+    colis_per_client[current_name] = colis_per_client.get(current_name, []) + [current_nbcolis]
+    city_per_client[current_name] = current_city
+    department_per_client[current_name] = current_department
 
-# Utilisation de heapq.nlargest pour obtenir les 10 premiers clients les plus fidèles
-top_clients = heapq.nlargest(10, list, key=lambda x: x[3])
+top_clients = heapq.nlargest(10, colis_per_client.keys(), key=lambda x: sum(colis_per_client[x]))
 
 for client in top_clients:
-    print('%s\t%s\t%s\t%s' % (client[0], client[1], client[2], client[3]))  # Impression des valeurs des clients fidèles
+    colis = colis_per_client[client]
+    moyenne = sum(colis) / len(colis)
+    ecart_type = math.sqrt(sum((x - moyenne)**2 for x in colis) / len(colis))
+    city = city_per_client[client]
+    department = department_per_client[client]
+    print('%s\t%s\t%s\t%s\t%.2f\t%.2f' % (client, city, department, sum(colis), moyenne, ecart_type))
