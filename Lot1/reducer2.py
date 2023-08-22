@@ -1,11 +1,11 @@
-import math
+import statistics
 import sys
+from io import BytesIO
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from io import BytesIO
 
 # Initialisation des variables pour suivre l'état en cours
 current_name = None
@@ -38,7 +38,8 @@ for line in sys.stdin:
     # Si le nom du client est le même que précédemment, accumule les colis
     elif current_name == name:
         codcde_per_client.add(codcde)
-        # le nombre de colis ne change pas tant que l'on ne change pas de commande. Réinitialisation ensuite
+        # le nombre de colis ne change pas tant que l'on ne change pas de commande.
+        # Réinitialisation ensuite
         if current_codcde != codcde:
             colis_per_client.append(nbcolis)
             current_nbcolis += nbcolis
@@ -46,9 +47,7 @@ for line in sys.stdin:
     # Si le nom du client change, stocke les valeurs et réinitialise les variables
     else:
         moyenne = current_nbcolis / len(codcde_per_client)
-        somme_carres_ecarts = sum((x - moyenne) ** 2 for x in colis_per_client)
-        variance = somme_carres_ecarts / len(colis_per_client)
-        ecart_type = math.sqrt(variance)
+        ecart_type = statistics.stdev(colis_per_client) if len(colis_per_client) > 1 else 0
         clientRow = [current_name, current_city, current_department,
                      len(codcde_per_client), current_nbcolis,
                      "%.2f" % (current_nbcolis / len(codcde_per_client)),
@@ -66,9 +65,7 @@ for line in sys.stdin:
 # Stocke les valeurs du dernier client
 if current_name:
     moyenne = current_nbcolis / len(codcde_per_client)
-    somme_carres_ecarts = sum((x - moyenne) ** 2 for x in colis_per_client)
-    variance = somme_carres_ecarts / len(colis_per_client)
-    ecart_type = math.sqrt(variance)
+    ecart_type = statistics.stdev(colis_per_client) if len(colis_per_client) > 1 else 0
     clientRow = [current_name, current_city, current_department,
                  len(codcde_per_client), current_nbcolis,
                  "%.2f" % (current_nbcolis / len(codcde_per_client)),
@@ -77,7 +74,8 @@ if current_name:
 
 newliste = sorted(liste, key=lambda x: x[3], reverse=True)[:10]
 print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-    "Nom", "Ville", "Departement", "Nb Commandes", "Nb Colis", "Moy Colis par commande", "Ecart Type"))
+    "Nom", "Ville", "Departement", "Nb Commandes",
+    "Nb Colis", "Moy Colis par commande", "Ecart Type"))
 for row in newliste:
     print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(*row))
 
