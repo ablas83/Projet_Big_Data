@@ -12,6 +12,7 @@ current_name = None
 current_city = None
 current_department = None
 current_nbcolis = 0
+current_codcde = 0
 codcde_per_client = set()
 colis_per_client = []  # Liste pour calculer l'écart type
 liste = []
@@ -31,13 +32,17 @@ for line in sys.stdin:
         current_city = city
         current_department = department
         current_nbcolis = nbcolis
+        current_codcde = codcde
         codcde_per_client.add(codcde)
         colis_per_client.append(nbcolis)
     # Si le nom du client est le même que précédemment, accumule les colis
     elif current_name == name:
-        current_nbcolis += nbcolis
         codcde_per_client.add(codcde)
-        colis_per_client.append(nbcolis)
+        # le nombre de colis ne change pas tant que l'on ne change pas de commande. Réinitialisation ensuite
+        if current_codcde != codcde:
+            colis_per_client.append(nbcolis)
+            current_nbcolis += nbcolis
+            current_codcde = codcde
     # Si le nom du client change, stocke les valeurs et réinitialise les variables
     else:
         moyenne = current_nbcolis / len(codcde_per_client)
@@ -54,6 +59,7 @@ for line in sys.stdin:
         codcde_per_client.add(codcde)
         current_name = name
         current_city = city
+        current_codcde = codcde
         current_department = department
         current_nbcolis = nbcolis
 
@@ -71,7 +77,7 @@ if current_name:
 
 newliste = sorted(liste, key=lambda x: x[3], reverse=True)[:10]
 print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-    "Nom", "Ville", "Departement", "Nb Codes", "Nb Colis", "Moy Colis", "Ecart Type"))
+    "Nom", "Ville", "Departement", "Nb Commandes", "Nb Colis", "Moy Colis par commande", "Ecart Type"))
 for row in newliste:
     print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(*row))
 
@@ -108,7 +114,7 @@ for ville in villes_order:
     elements.append(ville_header)
 
     # En-têtes de colonnes pour le tableau
-    header = ["Nom", "Nb Codes", "Nb Colis", "Moy Colis", "Écart Type"]
+    header = ["Nom", "Nb Commandes", "Nb Colis", "Moy Colis/commande", "Écart Type"]
     data = [header] + [[row[0], row[3], row[4], row[5], row[6]] for row in ville_rows]
 
     # Créer une table avec les données de la ville
