@@ -134,5 +134,5 @@ for ville in villes_order:
 doc.build(elements)
 
 # Écrire le contenu PDF dans un fichier
-with open("resultats_par_ville.pdf", "wb") as pdf_file:
+with open("Lot1/resultats_par_ville_exo2.pdf", "wb") as pdf_file:
     pdf_file.write(pdf_buffer.getvalue())
