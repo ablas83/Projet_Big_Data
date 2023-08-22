@@ -1,18 +1,19 @@
-import heapq
-import sys
 import math
+import sys
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from io import BytesIO
 
 # Initialisation des variables pour suivre l'état en cours
 current_name = None
 current_city = None
 current_department = None
 current_nbcolis = 0
-
-# Dictionnaires pour stocker les informations relatives à chaque client
-colis_per_client = {}         # Stocke les colis par client
-city_per_client = {}          # Stocke les villes par client
-department_per_client = {}    # Stocke les départements par client
 codcde_per_client = set()
+colis_per_client = []  # Liste pour calculer l'écart type
 liste = []
 
 # Parcourir chaque ligne d'entrée
@@ -31,18 +32,24 @@ for line in sys.stdin:
         current_department = department
         current_nbcolis = nbcolis
         codcde_per_client.add(codcde)
+        colis_per_client.append(nbcolis)
     # Si le nom du client est le même que précédemment, accumule les colis
     elif current_name == name:
         current_nbcolis += nbcolis
         codcde_per_client.add(codcde)
-
+        colis_per_client.append(nbcolis)
     # Si le nom du client change, stocke les valeurs et réinitialise les variables
     else:
-        clientDict = {"name": current_name, "ville": current_city, "dep":current_department, "nbcode": len(codcde_per_client)}
-        liste.append(clientDict)
-        colis_per_client[current_name] = colis_per_client.get(current_name, []) + [current_nbcolis]
-        city_per_client[current_name] = current_city
-        department_per_client[current_name] = current_department
+        moyenne = current_nbcolis / len(codcde_per_client)
+        somme_carres_ecarts = sum((x - moyenne) ** 2 for x in colis_per_client)
+        variance = somme_carres_ecarts / len(colis_per_client)
+        ecart_type = math.sqrt(variance)
+        clientRow = [current_name, current_city, current_department,
+                     len(codcde_per_client), current_nbcolis,
+                     "%.2f" % (current_nbcolis / len(codcde_per_client)),
+                     "%.2f" % ecart_type]
+        liste.append(clientRow)
+        colis_per_client = [nbcolis]
         codcde_per_client = set()
         codcde_per_client.add(codcde)
         current_name = name
@@ -50,26 +57,76 @@ for line in sys.stdin:
         current_department = department
         current_nbcolis = nbcolis
 
-
 # Stocke les valeurs du dernier client
 if current_name:
-    clientDict = {"name": current_name, "ville": current_city, "dep": current_department,
-                  "nbcode": len(codcde_per_client)}
-    liste.append(clientDict)
-    colis_per_client[current_name] = colis_per_client.get(current_name, []) + [current_nbcolis]
-    city_per_client[current_name] = current_city
-    department_per_client[current_name] = current_department
-    codcde_per_client = set()
-    codcde_per_client.add(codcde)
+    moyenne = current_nbcolis / len(codcde_per_client)
+    somme_carres_ecarts = sum((x - moyenne) ** 2 for x in colis_per_client)
+    variance = somme_carres_ecarts / len(colis_per_client)
+    ecart_type = math.sqrt(variance)
+    clientRow = [current_name, current_city, current_department,
+                 len(codcde_per_client), current_nbcolis,
+                 "%.2f" % (current_nbcolis / len(codcde_per_client)),
+                 "%.2f" % ecart_type]
+    liste.append(clientRow)
 
-newliste = sorted(liste, key=lambda x: x['nbcode'], reverse=True)[:10]
-print(newliste)
+newliste = sorted(liste, key=lambda x: x[3], reverse=True)[:10]
+print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+    "Nom", "Ville", "Departement", "Nb Codes", "Nb Colis", "Moy Colis", "Ecart Type"))
+for row in newliste:
+    print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(*row))
 
-# Parcours et affiche les informations pour chaque client
-'''for client in top_clients:
-    colis = colis_per_client[client]
-    moyenne = sum(colis) / len(colis)
-    ecart_type = math.sqrt(sum((x - moyenne)**2 for x in colis) / len(colis))
-    city = city_per_client[client]
-    department = department_per_client[client]
-'''
+
+# Récupérer les noms de ville uniques dans l'ordre d'apparition
+villes_set = set()
+villes_order = []
+
+for row in newliste:
+    ville = row[1]
+    if ville not in villes_set:
+        villes_order.append(ville)
+        villes_set.add(ville)
+
+# Créer un fichier PDF en utilisant la bibliothèque reportlab
+pdf_buffer = BytesIO()
+doc = SimpleDocTemplate(pdf_buffer, pagesize=landscape(letter))
+elements = []
+
+# Styles pour les en-têtes et les cellules
+styles = getSampleStyleSheet()
+header_style = styles['Heading1']
+header_style.alignment = TA_CENTER
+cell_style = ParagraphStyle('TableCellStyle', alignment=TA_LEFT)
+
+# Parcourir les villes dans l'ordre d'apparition
+for ville in villes_order:
+    # Filtrer les résultats pour la ville actuelle
+    ville_rows = [row for row in newliste if row[1] == ville]
+
+    # En-tête de la ville (nom de la ville et numéro de département)
+    ville_header = Paragraph("<b>Ville:</b> {}<br/><b>Département:</b> {}"
+                             .format(ville, ville_rows[0][2]), header_style)
+    elements.append(ville_header)
+
+    # En-têtes de colonnes pour le tableau
+    header = ["Nom", "Nb Codes", "Nb Colis", "Moy Colis", "Écart Type"]
+    data = [header] + [[row[0], row[3], row[4], row[5], row[6]] for row in ville_rows]
+
+    # Créer une table avec les données de la ville
+    table = Table(data)
+    table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                               ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                               ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                               ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                               ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                               ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
+
+    elements.append(table)
+    elements.append(PageBreak())  # Saut de page après chaque tableau de ville
+
+# Construire le document PDF
+doc.build(elements)
+
+# Écrire le contenu PDF dans un fichier
+with open("resultats_par_ville.pdf", "wb") as pdf_file:
+    pdf_file.write(pdf_buffer.getvalue())
