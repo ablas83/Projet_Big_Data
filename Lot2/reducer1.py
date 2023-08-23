@@ -32,22 +32,23 @@ for line in sys.stdin:
         current_nbr_timbrecde = nbr_timbrecde
 
     elif current_codecde == codecde :
+
         current_nbr_timbrecde += nbr_timbrecde
 
-    else :
-        list_codecde.append([current_codecde, current_ville, current_nbr_colis, round(current_nbr_timbrecde,2)])
+    else:
+        list_codecde.append([current_codecde, current_ville, current_nbr_colis, round(current_nbr_timbrecde, 2)])
         current_codecde = codecde
         current_ville = ville
         current_nbr_colis = nbr_colis
         current_nbr_timbrecde = nbr_timbrecde
 
-if current_codecde :
-    list_codecde.append([current_codecde, current_ville, current_nbr_colis, round(current_nbr_timbrecde,2)])
+if current_codecde:
+    list_codecde.append([current_codecde, current_ville, current_nbr_colis, round(current_nbr_timbrecde, 2)])
 
 
 list_codecde.remove([])
 
-sorted_list_codecde = sorted(list_codecde,key=itemgetter(2),reverse=True)[:100]
+sorted_list_codecde = sorted(list_codecde, key=itemgetter(2), reverse=True)[:100]
 
 # Créer un nouveau classeur Excel
 workbook = openpyxl.Workbook()
@@ -68,6 +69,7 @@ workbook.save(excel_file_path)
 '''with open("output4.txt", "a") as f:
     for line in sorted_list_codecde:
         print(line,file=f)'''
+
 
 
 
