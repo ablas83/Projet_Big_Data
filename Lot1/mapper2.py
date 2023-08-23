@@ -15,7 +15,7 @@ for line in sys.stdin:
 
         # Extraction des informations pertinentes
         year = int(fields[7].replace('"', '').split('-')[0]) if (
-        fields[7].replace('"', '').split('-')[0]).isdecimal() else 0
+            fields[7].replace('"', '').split('-')[0]).isdecimal() else 0
         name = fields[0].replace('"', '') + " " + fields[2].replace('"', '')
         codcde = fields[6].replace('"', '')
         nbcolis = int(fields[10].replace('"', '')) if fields[10].replace('"', '') != 'NUL' else 0
