@@ -11,7 +11,7 @@ year = None
 objet = None
 department = None
 
-dict_année_nbr_com_par_objet = {}
+dict_annee_nbr_com_par_objet = {}
 list_dict = []
 current_nbr_commande = 0
 
@@ -28,36 +28,36 @@ for line in sys.stdin:
         current_nbr_commande = 1
     elif current_objet == objet:
         if current_year == year:
-            if current_department == department :
+            if current_department == department:
                 current_nbr_commande += 1
             else:
                 list_dict.append((current_year, current_department, current_nbr_commande))
                 current_year = year
                 current_department = department
                 current_nbr_commande = 1
-        else :
+        else:
             list_dict.append((current_year, current_department, current_nbr_commande))
             current_year = year
             current_department = department
             current_nbr_commande = 1
 
     else:
-        list_dict.append((current_year,current_department,current_nbr_commande))
-        dict_année_nbr_com_par_objet[current_objet] = list_dict
+        list_dict.append((current_year, current_department, current_nbr_commande))
+        dict_annee_nbr_com_par_objet[current_objet] = list_dict
         current_objet = objet
         current_year = year
         current_department = department
         current_nbr_commande = 1
         list_dict = []
 
-if current_objet == objet :
-    list_dict.append((current_year,current_department,current_nbr_commande))
-    dict_année_nbr_com_par_objet[current_objet] = list_dict
+if current_objet == objet:
+    list_dict.append((current_year, current_department, current_nbr_commande))
+    dict_annee_nbr_com_par_objet[current_objet] = list_dict
 
 pdf_filename = 'plot_evolution_par_objet_departement.pdf'  # Nom du fichier PDF à générer
 
 with PdfPages(pdf_filename) as pdf:
-    for object_name, data_points in dict_année_nbr_com_par_objet.items():
+    for object_name, data_points in dict_annee_nbr_com_par_objet.items():
         departments = set([department for _, department, _ in data_points])
 
         for department in departments:
@@ -77,18 +77,3 @@ with PdfPages(pdf_filename) as pdf:
 
             pdf.savefig()
             plt.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
