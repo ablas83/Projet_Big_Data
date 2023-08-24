@@ -13,7 +13,7 @@ objet = None
 department = None
 qte = 0
 
-dict_année_nbr_com_par_objet = {}  # Dictionnaire pour stocker les données par objet
+dict_annee_nbr_com_par_objet = {}  # Dictionnaire pour stocker les données par objet
 list_dict = []  # Liste temporaire pour stocker les données par année et département
 
 for line in sys.stdin:
@@ -49,22 +49,23 @@ for line in sys.stdin:
             current_qte = qte
     else:
         list_dict.append((current_year, current_department, current_qte))
-        dict_année_nbr_com_par_objet[current_objet] = list_dict
+        dict_annee_nbr_com_par_objet[current_objet] = list_dict
         current_objet = objet
         current_year = year
         current_department = department
         current_qte = qte
         list_dict = []
+    print("OK;OK")
 
 if current_objet == objet:
     list_dict.append((current_year, current_department, current_qte))
-    dict_année_nbr_com_par_objet[current_objet] = list_dict
+    dict_annee_nbr_com_par_objet[current_objet] = list_dict
 
-pdf_filename = 'plot_evolution_par_objet_departement.pdf'  # Nom du fichier PDF à générer
+pdf_filename = '/datavolume1/evol_par_objet_depart.pdf'  # Nom du fichier PDF à générer
 
 # Création du fichier PDF avec les graphiques
 with PdfPages(pdf_filename) as pdf:
-    for object_name, data_points in dict_année_nbr_com_par_objet.items():
+    for object_name, data_points in dict_annee_nbr_com_par_objet.items():
         departments = set([department for _, department, _ in data_points])
 
         for department in departments:
@@ -73,10 +74,10 @@ with PdfPages(pdf_filename) as pdf:
             filtered_data = [(year, nbr_objets) for year, dep, nbr_objets in data_points if dep == department]
             years, nbr_objets = zip(*filtered_data)
 
-            plt.plot(years, nbr_objets, marker='o', label=f'Department {department}')
+            plt.plot(years, nbr_objets, marker='o', label='Department %s'%department)
             plt.xlabel('Année')
             plt.ylabel('Nombre d\'objets')
-            plt.title(f'Évolution du nombre d\'objets pour {object_name} - Département {department}')
+            plt.title('Évolution du nombre d\'objets pour %s - Département %s'%(object_name,department))
             plt.legend()
             plt.grid(True)
             plt.xticks(rotation=45)
