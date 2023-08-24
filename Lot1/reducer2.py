@@ -1,11 +1,10 @@
 import statistics
 import sys
 from io import BytesIO
-from reportlab.lib.pagesizes import letter, landscape
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
+
+import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
 
 # Initialisation des variables pour suivre l'état en cours
 current_name = None
@@ -61,6 +60,7 @@ for line in sys.stdin:
         current_codcde = codcde
         current_department = department
         current_nbcolis = nbcolis
+    print("OK;Ok")
 
 # Stocke les valeurs du dernier client
 if current_name:
@@ -73,12 +73,6 @@ if current_name:
     liste.append(clientRow)
 
 newliste = sorted(liste, key=lambda x: x[3], reverse=True)[:10]
-print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
-    "Nom", "Ville", "Departement", "Nb Commandes",
-    "Nb Colis", "Moy Colis par commande", "Ecart Type"))
-for row in newliste:
-    print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(*row))
-
 
 # Récupérer les noms de ville uniques dans l'ordre d'apparition
 villes_set = set()
@@ -90,47 +84,37 @@ for row in newliste:
         villes_order.append(ville)
         villes_set.add(ville)
 
-# Créer un fichier PDF en utilisant la bibliothèque reportlab
+# Créer un fichier PDF en utilisant le package PdfPages de matplotlib
 pdf_buffer = BytesIO()
-doc = SimpleDocTemplate(pdf_buffer, pagesize=landscape(letter))
-elements = []
-
-# Styles pour les en-têtes et les cellules
-styles = getSampleStyleSheet()
-header_style = styles['Heading1']
-header_style.alignment = TA_CENTER
-cell_style = ParagraphStyle('TableCellStyle', alignment=TA_LEFT)
+pdf_pages = PdfPages(pdf_buffer)
 
 # Parcourir les villes dans l'ordre d'apparition
 for ville in villes_order:
     # Filtrer les résultats pour la ville actuelle
     ville_rows = [row for row in newliste if row[1] == ville]
 
-    # En-tête de la ville (nom de la ville et numéro de département)
-    ville_header = Paragraph("<b>Ville:</b> {}<br/><b>Département:</b> {}"
-                             .format(ville, ville_rows[0][2]), header_style)
-    elements.append(ville_header)
+    # Créer un DataFrame pandas pour la ville
+    df = pd.DataFrame(ville_rows,
+                      columns=["Nom", "Ville", "Departement", "Nb Commandes", "Nb Colis", "Moy Colis/commande", "Écart Type"])
 
-    # En-têtes de colonnes pour le tableau
-    header = ["Nom", "Nb Commandes", "Nb Colis", "Moy Colis/commande", "Écart Type"]
-    data = [header] + [[row[0], row[3], row[4], row[5], row[6]] for row in ville_rows]
+    # Créer une figure pour le tableau
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.axis('tight')
+    ax.axis('off')
+    ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
 
-    # Créer une table avec les données de la ville
-    table = Table(data)
-    table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                               ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                               ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                               ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                               ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                               ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
+    # Ajouter le titre
+    ax.set_title("Statistiques pour la ville de {}\nDépartement: {}".format(ville, ville_rows[0][2]))
 
-    elements.append(table)
-    elements.append(PageBreak())  # Saut de page après chaque tableau de ville
+    # Ajouter la figure au PDF
+    pdf_pages.savefig(fig, bbox_inches='tight')
 
-# Construire le document PDF
-doc.build(elements)
+    # Fermer la figure
+    plt.close(fig)
+
+# Fermer les pages PDF
+pdf_pages.close()
 
 # Écrire le contenu PDF dans un fichier
-with open("Lot1/resultats_par_ville_exo2.pdf", "wb") as pdf_file:
+with open("resultats_par_ville.pdf", "wb") as pdf_file:
     pdf_file.write(pdf_buffer.getvalue())
