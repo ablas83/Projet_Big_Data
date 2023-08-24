@@ -1,5 +1,6 @@
 import sys
 from operator import itemgetter
+import openpyxl
 
 current_codecde = None
 current_ville = None
@@ -30,8 +31,8 @@ for line in sys.stdin:
         current_nbr_colis = nbr_colis
         current_nbr_timbrecde = nbr_timbrecde
 
-    elif current_codecde == codecde:
-        current_nbr_colis += nbr_colis
+    elif current_codecde == codecde :
+
         current_nbr_timbrecde += nbr_timbrecde
 
     else:
@@ -49,7 +50,26 @@ list_codecde.remove([])
 
 sorted_list_codecde = sorted(list_codecde, key=itemgetter(2), reverse=True)[:100]
 
-'''with open("output1.txt", "a") as f:
+# Créer un nouveau classeur Excel
+workbook = openpyxl.Workbook()
+lot2_ex1 = workbook.active
+
+# En-tête des colonnes
+header = ['Code Commande', 'Ville', 'Nbr Colis', 'Somme timbrecde']
+
+lot2_ex1.append(header)
+# Ajouter les données à la feuille Excel
+for row in sorted_list_codecde:
+    lot2_ex1.append(row)
+
+# Sauvegarder le classeur Excel
+excel_file_path = 'lot2_ex1.xlsx'
+workbook.save(excel_file_path)
+
+'''with open("output4.txt", "a") as f:
     for line in sorted_list_codecde:
-        print(line,file=f)
-'''
+        print(line,file=f)'''
+
+
+
+
