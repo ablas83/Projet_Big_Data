@@ -60,7 +60,7 @@ for line in sys.stdin:
         current_codcde = codcde
         current_department = department
         current_nbcolis = nbcolis
-    print("OK;Ok")
+
 
 # Stocke les valeurs du dernier client
 if current_name:
