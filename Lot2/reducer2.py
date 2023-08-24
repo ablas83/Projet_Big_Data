@@ -1,11 +1,10 @@
 import sys
-from operator import itemgetter
 import random
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import openpyxl
-from statistics import mean
+import pandas as pd
 
+# Initialisation des variables
 current_codecde = None
 current_ville = None
 current_nbr_colis = 0
@@ -22,21 +21,24 @@ qte = 0
 points = 0
 total_points = 0
 
-list_codecde = [[]]
+list_codecde = [[]]  # Initialisation d'une liste de listes (peut-être pour éviter une première comparaison)
 
+# Parcours des lignes d'entrée
 for line in sys.stdin:
-    # remove leading and trailing whitespace
+    # Suppression des espaces en début et en fin de ligne
     line = line.strip()
-    # parse the input we got from mapper.py
+    # Analyse de l'entrée provenant de mapper.py
     codecde, ville, nbr_colis, qte, points = line.split(',')
+
     try:
-        nbr_colis = float(nbr_colis)
+        nbr_colis = float(nbr_colis)  # Conversion en nombre à virgule flottante
         qte = float(qte)
         points = float(points)
     except ValueError:
-        continue
+        continue  # Ignorer les lignes avec des valeurs non valides
 
     if current_codecde is None:
+        # Initialisation des valeurs pour la première commande
         current_codecde = codecde
         current_ville = ville
         current_nbr_colis = nbr_colis
@@ -44,16 +46,16 @@ for line in sys.stdin:
         current_qte = qte
         current_points = points
         current_total_points = current_qte * current_points
-        current_moyenne = current_total_points/current_nbr_commande
+        current_moyenne = current_total_points / current_nbr_commande
 
-    elif current_codecde == codecde :
+    elif current_codecde == codecde:
         current_nbr_colis = nbr_colis
         current_nbr_commande += 1
         current_qte += qte
         current_points += points
         current_total_points = current_points * current_qte
-        current_moyenne = current_total_points/current_nbr_commande
-    else :
+        current_moyenne = current_total_points / current_nbr_commande
+    else:
         list_codecde.append([current_codecde, current_ville, current_nbr_colis, current_moyenne])
         current_codecde = codecde
         current_ville = ville
@@ -63,54 +65,41 @@ for line in sys.stdin:
         current_points = points
         current_total_points = qte * points
 
-if current_codecde :
+if current_codecde:
     list_codecde.append([current_codecde, current_ville, current_nbr_colis, current_moyenne])
 
+list_codecde.remove([])  # Suppression de la liste vide éventuellement générée en début
 
-list_codecde.remove([])
+sorted_list_codecde = sorted(list_codecde, key=lambda x: x[3], reverse=True)[:100]
 
-sorted_list_codecde = sorted(list_codecde,key=itemgetter(3),reverse=True)[:100]
+# Sélectionner un échantillon aléatoire de 5% des données triées
+random_list = random.sample(sorted_list_codecde, int(len(sorted_list_codecde) * 0.05))
 
-random_list = random.sample(sorted_list_codecde,int(len(sorted_list_codecde)*0.05))
-
-
+# Extraire les données pour le graphique
 code = [item[0] for item in random_list]
 moyennes = [item[3] for item in random_list]
 
-# Création du graphique
+# Création du graphique en secteurs (camembert)
 fig, ax = plt.subplots()
 ax.pie(moyennes, labels=code, autopct='%1.1f%%', startangle=90)
 ax.axis('equal')  # Assure que le graphique est un cercle et non une ellipse
 
-# Ajouter un titre
-plt.title("Répartition des moyennes de commandes totales")
+# Ajouter un titre au graphique
+plt.title("Répartition des moyennes des commandes totales")
 
 # Enregistrer le graphique au format PDF
 pdf_file_path = 'graphique_pie.pdf'
 with PdfPages(pdf_file_path) as pdf:
-    pdf.savefig(fig)
-    plt.close()
+    pdf.savefig(fig)  # Sauvegarder le graphique dans le fichier PDF
+    plt.close()  # Fermer la figure après la sauvegarde
 
+# Création d'un DataFrame pandas à partir de l'échantillon aléatoire
+df = pd.DataFrame(random_list, columns=['Code Commande', 'Ville', 'Nbr Colis', 'Moyenne des commandes'])
 
-# Créer un nouveau classeur Excel
-workbook = openpyxl.Workbook()
-lot2_ex2 = workbook.active
+# Définition du nom du fichier Excel
+excel_filename = 'lot2_ex2.xlsx'
 
-# En-tête des colonnes
-header = ['Code Commande', 'Ville', 'Nbr Colis', 'Moyenne commandes']
+# Sauvegarde du DataFrame dans un fichier Excel
+df.to_excel(excel_filename, index=False)
 
-lot2_ex2.append(header)
-# Ajouter les données à la feuille Excel
-for row in random_list:
-    lot2_ex2.append(row)
-
-# Sauvegarder le classeur Excel
-excel_file_path = 'lot2_ex2.xlsx'
-workbook.save(excel_file_path)
-
-'''with open("output3.txt", "a") as f:
-    for line in sorted_list_codecde:
-        print(line,file=f)
-
-'''
-
+print(f"DataFrame saved to '{excel_filename}'.")

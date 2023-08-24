@@ -2,69 +2,76 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+# Initialisation des variables
 current_objet = None
 current_year = None
+current_qte = 0
 
 year = None
 objet = None
+qte = 0
 
-dict_annee_nbr_com_par_objet = {}
-list_dict = []
+dict_année_nbr_com_par_objet = {}  # Dictionnaire pour stocker les données par objet
+list_dict = []  # Liste temporaire pour stocker les données par année
 current_nbr_commande = 0
 
+# Parcours des lignes d'entrée
 for line in sys.stdin:
-    # remove leading and trailing whitespace
+    # Suppression des espaces en début et en fin de ligne
     line = line.strip()
-    # parse the input we got from mapper.py
-    objet, year, department, code_commande, nbcolis = line.split(',')
+    # Analyse de l'entrée provenant de mapper.py
+    objet, year, department, code_commande, qte = line.split(',')
+
+    try:
+        qte = float(qte)
+    except ValueError:
+        continue
 
     if current_objet is None:
+        # Initialisation des valeurs pour le premier objet
         current_objet = objet
         current_year = year
-        current_nbr_commande = 1
+        current_qte = qte
     elif current_objet == objet:
         if current_year == year:
-            current_nbr_commande += 1
+            # Mise à jour du nombre d'objets pour la même année et le même objet
+            current_qte += qte
         else:
-            list_dict.append((current_year, current_nbr_commande))
+            # Ajout des données de l'année précédente à la liste et réinitialisation
+            list_dict.append((current_year, current_qte))
             current_year = year
-            current_nbr_commande = 1
-
+            current_qte = qte
     else:
-        list_dict.append((current_year, current_nbr_commande))
-        dict_annee_nbr_com_par_objet[current_objet] = list_dict
+        # Changement d'objet, ajout des données précédentes au dictionnaire et réinitialisation
+        list_dict.append((current_year, current_qte))
+        dict_année_nbr_com_par_objet[current_objet] = list_dict
         current_objet = objet
         current_year = year
-        current_nbr_commande = 1
+        current_qte = qte
         list_dict = []
 
+# Ajout des dernières données à la liste et au dictionnaire
 if current_objet == objet:
-    list_dict.append((current_year, current_nbr_commande))
-    dict_annee_nbr_com_par_objet[current_objet] = list_dict
+    list_dict.append((current_year, current_qte))
+    dict_année_nbr_com_par_objet[current_objet] = list_dict
 
-pdf_filename = 'plot_evolution_par_objet.pdf'  # Name of the PDF file to be generated
+pdf_filename = 'plot_evolution_par_objet.pdf'  # Nom du fichier PDF à générer
 
+# Création du fichier PDF avec les graphiques
 with PdfPages(pdf_filename) as pdf:
-    for object_name, data_points in dict_annee_nbr_com_par_objet.items():
-        plt.figure(figsize=(8, 5))  # Adjust the figure size if needed
+    for object_name, data_points in dict_année_nbr_com_par_objet.items():
+        plt.figure(figsize=(8, 5))  # Ajuster la taille de la figure si nécessaire
 
-        years, nbr_commande = zip(*data_points)
-        plt.plot(years, nbr_commande, marker='o', label=object_name)
+        years, nbr_objets = zip(*data_points)
+        plt.plot(years, nbr_objets, marker='o', label=object_name)
 
         plt.xlabel('Year')
-        plt.ylabel('Number of Commands')
-        plt.title(f'Evolution of Number of Commands for {object_name}')
+        plt.ylabel("Nombres d'objets")
+        plt.title(f'Evolution de nombre d objets pour {object_name}')
         plt.legend()
         plt.grid(True)
         plt.xticks(rotation=45)
         plt.tight_layout()
 
-        pdf.savefig()
-        plt.close()
-
-
-'''with open('abc3.txt', 'w') as temp_file:
-    for item in dict_année_nbr_com_par_objet:
-        temp_file.write("%s\n"  %item + str(dict_année_nbr_com_par_objet[item][0]) +' '
-        + str(dict_année_nbr_com_par_objet[item][1]+ ' '))
-'''
+        pdf.savefig()  # Sauvegarde du graphique dans le PDF
+        plt.close()  # Fermeture de la figure après sauvegarde
